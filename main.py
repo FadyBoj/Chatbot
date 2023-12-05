@@ -22,7 +22,8 @@ intents = json.loads(data_file)
 
 lemmatizer = WordNetLemmatizer()
 
-categories = ["burger","kids meals","dessert","drinks"]
+categories = ["burger","kids-meals","dessert","drinks"]
+ignore_words = ["?","!",","]
 
 def find_closest_keyword(user_input, keywords, threshold=70):
     
@@ -31,6 +32,8 @@ def find_closest_keyword(user_input, keywords, threshold=70):
 
     for i, keyword in enumerate(keywords):
         for string in user_input.lower().split(' '):
+          if(string in ignore_words):
+              break
           current_similarity = fuzz.partial_ratio(f"{string.lower()} ",keyword.lower())
           if(current_similarity > temp_similarity):
               temp_similarity = current_similarity
@@ -94,10 +97,3 @@ def predict_class(sentence, model):
     return output
 
 
-while True:
-    message = input("User: ")
-    if message.lower() == 'exit':
-        break
-    else:
-        output = predict_class(message, model)
-        print("XFOOD:", output)
