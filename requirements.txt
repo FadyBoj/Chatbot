@@ -76,9 +76,8 @@ spacy-loggers==1.0.5
 srsly==2.4.8
 tensorboard==2.15.1
 tensorboard-data-server==0.7.2
-tensorflow==2.2.0
+tensorflow
 tensorflow-estimator==2.15.0
-tensorflow-intel==2.15.0
 tensorflow-io-gcs-filesystem==0.31.0
 termcolor==2.3.0
 tflearn @ git+https://github.com/MihaMarkic/tflearn.git@6472b8588e758ff4a33a2764d4ee638bbd0e42f0
