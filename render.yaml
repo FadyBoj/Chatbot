@@ -1,0 +1,7 @@
+# render.yaml
+
+services:
+  - name: XFOOD-BOT
+    env: docker
+    buildCommand: docker pull your-username/your-app
+    startCommand: docker run -p 5000:5000 your-username/your-app

@@ -4,6 +4,8 @@ model = load_model("chatbot_model.h5")
 from flask import Flask , request , jsonify
 from waitress import serve
 app = Flask(__name__)
+import os
+port = int(os.environ.get("PORT", 5000))
 
 @app.route('/send-msg/<msg>',methods=["GET"])
 def main(msg):
@@ -14,8 +16,8 @@ def main(msg):
 
     try:
         chatbot_response = predict_class(msg,model)
-    except:
-        response = jsonify({"msg":"Something went wrong"})
+    except Exception as err:
+        response = jsonify({"msg":"Something went wrong","Error":err})
         response.status_code = 500
         return response
     else:
@@ -26,6 +28,5 @@ def main(msg):
     
 
 
-
 if __name__ == '__main__':
-    serve(app,port=3000)
+    serve(app,port=port)
