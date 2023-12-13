@@ -2,9 +2,11 @@ from main import predict_class
 from keras.models import load_model
 model = load_model("chatbot_model.h5")
 from flask import Flask , request , jsonify
+from flask_cors import CORS
 from waitress import serve
-app = Flask(__name__)
 import os
+app = Flask(__name__)
+CORS(app)
 port = int(os.environ.get("PORT", 5000))
 
 @app.route('/send-msg/<msg>',methods=["GET"])
@@ -17,7 +19,8 @@ def main(msg):
     try:
         chatbot_response = predict_class(msg,model)
     except Exception as err:
-        response = jsonify({"msg":"Something went wrong","Error":err})
+        print(err)
+        response = jsonify({"msg":"Something went wrong"})
         response.status_code = 500
         return response
     else:
@@ -26,7 +29,9 @@ def main(msg):
         return response
    
     
-
+@app.route('/',methods=('GET', 'POST',))
+def sec():
+    return jsonify({"test":"Hi"})
 
 if __name__ == '__main__':
-    serve(app,port=port)
+    app.run(debug=True, port=port, host='0.0.0.0')

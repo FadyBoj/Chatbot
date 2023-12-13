@@ -1,6 +1,7 @@
 import nltk
 import numpy as np
 import json
+import re
 from keras.models import load_model
 from nltk.stem import WordNetLemmatizer
 import pickle
@@ -8,11 +9,15 @@ import random
 from fuzzywuzzy import fuzz
 import requests
 import tensorflow as tf
-
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+from spellchecker import SpellChecker
+nltk.download('omw-1.4')
+nltk.download("punkt")
+nltk.download("wordnet")
 
 
 lemmatizer = WordNetLemmatizer()
+spell = SpellChecker()
+
 
 intents = json.loads(open("intents.json").read())
 
@@ -26,8 +31,55 @@ intents = json.loads(data_file)
 
 lemmatizer = WordNetLemmatizer()
 
+
+
+
 categories = ["burger","kids-meals","dessert","drinks"]
 ignore_words = ["?","!",","]
+
+def get_correction(user_input):
+    corrected_input = ''
+    for i, word  in enumerate(user_input.split(' ')):
+        if i == len(user_input.split(' ')) - 1:
+            corrected_input += f'{spell.correction(word)}'
+        else:
+            corrected_input += f'{spell.correction(word)} '
+
+    print(corrected_input)
+    return corrected_input
+
+
+def find_closest_title(user_input, titles):
+    
+    temp_similarity = 0
+    top_similarity_index = []
+    quantaties = []
+
+    for i, keyword in enumerate(titles):
+        for string in user_input.lower().split(' '):
+          if(string in ignore_words):
+              break
+        current_similarity = fuzz.partial_ratio(f"{string.lower()} ",keyword.lower())
+        if(current_similarity > 70):
+            temp_similarity = i
+            top_similarity_index.append(i)
+    
+    if top_similarity_index:
+        return top_similarity_index
+    else :
+        return None
+    
+def extract_numeric_values(input_string):
+    # Define a regular expression pattern to match numeric values
+    pattern = r'\d+'
+
+    # Use re.findall to find all matches of the pattern in the input string
+    matches = re.findall(pattern, input_string)
+
+    # Convert the matched strings to integers
+    numeric_values = [int(match) for match in matches]
+
+    return numeric_values
 
 def find_closest_keyword(user_input, keywords, threshold=70):
     
@@ -51,11 +103,14 @@ def find_closest_keyword(user_input, keywords, threshold=70):
         return None
 
 def clean_up_sentence(sentence):
-    sentence_words = nltk.word_tokenize(sentence)
+    corrected_sentence = get_correction(sentence)
+    sentence_words = nltk.word_tokenize(corrected_sentence)
     sentence_words = [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
     return sentence_words
 
 #done
+
+# Convert user_input
 
 def process_sentence(sentence, words, show_details=True):
     sentence_words = clean_up_sentence(sentence)
@@ -67,6 +122,8 @@ def process_sentence(sentence, words, show_details=True):
                 if show_details:
                     print("found in bag: %s" % w)
     return(np.array(bag))
+
+# Predict output
 
 def predict_class(sentence, model):
     p = process_sentence(sentence, words, show_details=False)
@@ -81,7 +138,10 @@ def predict_class(sentence, model):
             index = i
     output = random.choice(intents["intents"][index]["responses"])
 
+    print(classes[predicted_index])
 
+
+    #If menu
     if classes[predicted_index] == "menu":
         closest_keyword = find_closest_keyword(sentence,categories,threshold=70)
         if closest_keyword is not None:
@@ -97,7 +157,32 @@ def predict_class(sentence, model):
        
         return products
     
+    #IF Order
+    
+    if classes[predicted_index] == "order":
+        
+        products = requests.get('https://xfood.onrender.com/products').json()
+
+        titles = []
+
+        for product in products:
+            formatted_title = product["title"].replace(" ","-")
+            titles.append(formatted_title)
+
+        print(titles)
+
+        sentence = sentence.replace(" ","-")
+        print(sentence)
+        productIndexes = find_closest_title(sentence,titles)
+        print(productIndexes)
+        qtys = extract_numeric_values(sentence)
+        for i, index in enumerate(productIndexes):
+            print(titles[index],"quantaty : ")
+        print(qtys)
+            
 
     return output
 
-
+while True:
+    userInput = input("User :")
+    print(f'\nXFOOD:{predict_class(userInput,model)}\n')

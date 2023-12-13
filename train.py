@@ -1,7 +1,6 @@
 # libraries
 import random
 import tensorflow as tf
-from tensorflow.keras.optimizers import SGD
 from keras.layers import Dense, Dropout
 from keras.models import Sequential
 import numpy as np
