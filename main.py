@@ -14,6 +14,7 @@ nltk.download('omw-1.4')
 nltk.download("punkt")
 nltk.download("wordnet")
 
+token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1N2EyMTQ0M2U0MDgwYzliNjMzYWZkMiIsImVtYWlsIjoiZmFkeW5hYmlsNzAxQGdtYWlsLmNvbSIsImZpcnN0bmFtZSI6IkZhZHkiLCJsYXN0bmFtZSI6Ik5hYmlsIiwiaWF0IjoxNzAyNTAyODM3LCJleHAiOjE3MDI1ODkyMzd9.UYpUsFduCtVABsn7s4z6mPTnQOH4dCXxuXhSpa8b9ug"
 
 lemmatizer = WordNetLemmatizer()
 spell = SpellChecker()
@@ -27,14 +28,14 @@ words = pickle.load(open("words.pkl", "rb"))
 classes = pickle.load(open("classes.pkl", "rb"))
 
 data_file = open("intents.json").read()
-intents = json.loads(data_file)
+intents = json.loads(data_file) 
 
 lemmatizer = WordNetLemmatizer()
 
 
 
 
-categories = ["burger","kids-meals","dessert","drinks"]
+categories = ["burger","kids-meals","dessert","drinks","chicken","appetizers"]
 ignore_words = ["?","!",","]
 
 def get_correction(user_input):
@@ -148,14 +149,15 @@ def predict_class(sentence, model):
             products = requests.get(f'https://xfood.onrender.com/products?category={categories[closest_keyword]}').json()
             if len(products) == 0:
                 return "We're out of stock"
-            return products
+            return({"msg":products,"function":"Menu"})
         
 
         products = requests.get('https://xfood.onrender.com/products').json()
         if len(products) == 0:
                 return "We're out of stock"
        
-        return products
+        return({"msg":products,"function":"Menu"})
+
     
     #IF Order
     
@@ -176,13 +178,33 @@ def predict_class(sentence, model):
         productIndexes = find_closest_title(sentence,titles)
         print(productIndexes)
         qtys = extract_numeric_values(sentence)
+        cart= []
+        botString = ""
         for i, index in enumerate(productIndexes):
-            print(titles[index],"quantaty : ")
-        print(qtys)
+            if len(productIndexes) == 1:
+                botString += f"{titles[index]} has been added to cart, Please go to payment page to checkout !"
+            else:
+                if i == 0:
+                    botString += f"{titles[index]}, "
+
+                elif i != (len(productIndexes) - 1) and i > 0:
+                    botString += f"{titles[index]}, "
+                elif i == (len(productIndexes) - 1):
+                    botString += f"and {titles[index]} has been added to cart, Please go to payment page to checkout !"
+
+            cartItem = {
+                "productId":products[index]["_id"],
+                "productQuantity":qtys[i],
+                "price":products[index]["price"],
+                "size":150,
+                "extras":[]
+
+            }
+            cart.append(cartItem)
+        
+
+        return({"msg":cart,"function":"Order","botString":botString})
             
 
-    return output
+    return {"msg":output,"function":None}
 
-while True:
-    userInput = input("User :")
-    print(f'\nXFOOD:{predict_class(userInput,model)}\n')
